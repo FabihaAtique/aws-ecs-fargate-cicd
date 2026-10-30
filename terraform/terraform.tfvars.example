@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars and edit.
+region      = "us-east-1"
+project     = "fargate-cicd-demo"
+environment = "poc"
+
+# GitHub repo allowed to deploy (owner/repo). Leave empty to skip the OIDC deploy role.
+github_repo = ""
+
+# Set to false if the account already has the GitHub OIDC provider.
+create_github_oidc_provider = true
+
+# Cheapest POC: tasks in public subnets (no NAT gateway), tiny RDS.
+private_tasks   = false
+create_database = true
+
+# Optional HTTPS
+# domain_name    = "app.example.com"
+# hosted_zone_id = "Z0123456789ABC"
+
+# alarm_email = "you@example.com"

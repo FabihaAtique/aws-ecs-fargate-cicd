@@ -1,0 +1,9 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+.terraform.lock.hcl.bak
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+task-definition.json
