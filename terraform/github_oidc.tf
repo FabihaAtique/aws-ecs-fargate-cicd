@@ -42,10 +42,16 @@ data "aws_iam_policy_document" "github_assume" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # GitHub issues the subject either as repo:owner/name:ref:... or, with immutable IDs,
+    # as repo:owner@<owner-id>/name@<repo-id>:ref:... Both forms are pinned to this repo's
+    # main branch; "@" cannot appear in GitHub names, so the wildcard only matches the IDs.
     condition {
-      test     = "StringEquals"
+      test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values = [
+        "repo:${var.github_repo}:ref:refs/heads/main",
+        "repo:${split("/", var.github_repo)[0]}@*/${split("/", var.github_repo)[1]}@*:ref:refs/heads/main",
+      ]
     }
   }
 }

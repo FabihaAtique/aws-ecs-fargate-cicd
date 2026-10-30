@@ -55,6 +55,7 @@ def index():
         "environment": APP_ENV,
         "version": APP_VERSION,
         "database": _database_status(),
+        "deployed_by": "GitHub Actions (OIDC) -> ECR -> ECS Fargate",
     }
 
 
