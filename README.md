@@ -4,21 +4,27 @@ A containerised Python API deployed to **Amazon ECS on Fargate** behind an **App
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    dev[Developer] -->|git push| gh[GitHub Actions]
-    gh -->|OIDC AssumeRole| iam[IAM deploy role]
-    gh -->|docker push| ecr[(Amazon ECR)]
-    gh -->|register task def / update service| ecs
+![Architecture](architecture.png)
 
-    user[User] --> r53[Route 53 + ACM] --> alb[Application Load Balancer]
-    subgraph VPC [VPC, 2 AZs]
-        alb --> ecs[ECS Fargate service<br/>autoscaling 1-3 tasks]
-        ecs --> rds[(RDS Postgres<br/>private subnets)]
-    end
-    ecs --> cw[CloudWatch Logs,<br/>Container Insights, alarms]
-    ecs -.->|DB password| sm[Secrets Manager]
-```
+The editable diagram is in [`architecture.drawio`](architecture.drawio) (open it in app.diagrams.net).
+
+## Live deployment
+
+I deployed this to AWS, pushed changes through the pipeline, then tore it all down. Screenshots from that run:
+
+| | |
+|---|---|
+| **CI**: lint and tests, Terraform validate, Checkov and Trivy all green | **CD**: OIDC credentials, build and push to ECR, rolling deploy, smoke test |
+| ![CI run](docs/ci-run.png) | ![Deploy run](docs/deploy-run.png) |
+| **ECS service**: task running, ALB target healthy | **Deployment**: circuit breaker monitoring, 0 failed tasks |
+| ![ECS service health](docs/ecs-service-health.png) | ![ECS deployment](docs/ecs-deployment.png) |
+| **ECR**: every image tagged with its commit SHA | **The app**: reports the commit it was built from, connected to RDS |
+| ![ECR images](docs/ecr-images.png) | ![App response](docs/app-response.jpg) |
+
+Two things the pipeline caught along the way:
+
+- **GitHub's OIDC subject format.** GitHub now issues the OIDC `sub` claim with immutable owner and repo IDs, e.g. `repo:owner@123/name@456:ref:refs/heads/main`. A trust policy that matched only `repo:owner/name:...` rejected the token. The role now accepts both forms, still pinned to this repo's `main` branch (see `terraform/github_oidc.tf`). I diagnosed it from the `AssumeRoleWithWebIdentity` failure in CloudTrail.
+- **Vulnerable dependency.** Trivy failed the build on three HIGH CVEs in Starlette, which came in through an older FastAPI. Upgrading FastAPI and Starlette cleared them, and the next run was green.
 
 ## What it shows
 
